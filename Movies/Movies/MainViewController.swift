@@ -1,18 +1,31 @@
-// ListViewController.swift
+// MainViewController.swift
 // Copyright © RoadMap. All rights reserved.
 
 import UIKit
 /// LIstViewController
-final class ListViewController: UIViewController {
+final class MainViewController: UIViewController {
     // MARK: - Private Properties
 
-    private var filmTableView = UITableView()
+    private var movieTableView = UITableView()
     private var genresSegmentControl = UISegmentedControl()
     private let identifire = "MyCell"
     private var genresArray = ["Popular", "Top Rated", "Up Coming"]
-    private var jsonUrlString =
-        "https://api.themoviedb.org/3/movie/popular?api_key=d21445c991b862f2b5da36887c777ba4&language=ru-RU&page=1"
+    private var jsonUrlString = Constants.popular
     private var category: Category?
+    private var genresPath = [Constants.popular, Constants.topRated, Constants.upComing]
+
+    // MARK: - Properties
+
+    var viewModel: MVVMViewModel? {
+        didSet {
+            viewModel?.updateViewData = { [weak self] featchData in
+                self?.category = featchData?.movies
+                DispatchQueue.main.async {
+                    self?.movieTableView.reloadData()
+                }
+            }
+        }
+    }
 
     // MARK: - UIViewController
 
@@ -20,32 +33,33 @@ final class ListViewController: UIViewController {
         super.viewDidLoad()
 
         navigationItem.title = "Popular"
+        navigationController?.navigationBar.tintColor = .white
 
         createSegmentControl()
         createTable()
-        fetchData()
+        viewModel?.startFetch(urlString: Constants.popular)
     }
 
     // MARK: - Private Methods
 
     private func createTable() {
-        filmTableView.register(ListTableViewCell.self, forCellReuseIdentifier: identifire)
-        filmTableView.separatorStyle = .none
-        filmTableView.estimatedRowHeight = 200
-        filmTableView.rowHeight = UITableView.automaticDimension
-        view.addSubview(filmTableView)
+        movieTableView.register(ListTableViewCell.self, forCellReuseIdentifier: identifire)
+        movieTableView.separatorStyle = .none
+        movieTableView.estimatedRowHeight = 200
+        movieTableView.rowHeight = UITableView.automaticDimension
+        view.addSubview(movieTableView)
 
         let safeArea = view.safeAreaLayoutGuide
-        filmTableView.translatesAutoresizingMaskIntoConstraints = false
+        movieTableView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            filmTableView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: 0),
-            filmTableView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: 0),
-            filmTableView.topAnchor.constraint(equalTo: safeArea.topAnchor, constant: 0),
-            filmTableView.bottomAnchor.constraint(equalTo: genresSegmentControl.topAnchor, constant: -5)
+            movieTableView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: 0),
+            movieTableView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: 0),
+            movieTableView.topAnchor.constraint(equalTo: safeArea.topAnchor, constant: 0),
+            movieTableView.bottomAnchor.constraint(equalTo: genresSegmentControl.topAnchor, constant: -5)
         ])
 
-        filmTableView.delegate = self
-        filmTableView.dataSource = self
+        movieTableView.delegate = self
+        movieTableView.dataSource = self
     }
 
     private func createSegmentControl() {
@@ -66,43 +80,9 @@ final class ListViewController: UIViewController {
     }
 
     @objc private func selectGendersSegmentControl() {
-        switch genresSegmentControl.selectedSegmentIndex {
-        case 0:
-            jsonUrlString =
-                "https://api.themoviedb.org/3/movie/popular?api_key=d21445c991b862f2b5da36887c777ba4&language=ru-RU&page=1"
-            navigationItem.title = "Popular"
-        case 1:
-            jsonUrlString =
-                "https://api.themoviedb.org/3/movie/top_rated?api_key=d21445c991b862f2b5da36887c777ba4&language=ru-Ru&page=1"
-            navigationItem.title = "Top Rated"
-        case 2:
-            jsonUrlString =
-                "https://api.themoviedb.org/3/movie/upcoming?api_key=d21445c991b862f2b5da36887c777ba4&language=ru-Ru&page=1"
-            navigationItem.title = "Up Coming"
-        default:
-            break
-        }
-        fetchData()
-    }
-
-    private func fetchData() {
-        guard let url = URL(string: jsonUrlString) else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data else { return }
-            do {
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                self.category = try decoder.decode(Category.self, from: data)
-
-                weak var weakSelf = self
-                DispatchQueue.main.async {
-                    guard weakSelf == self else { return }
-                    weakSelf?.filmTableView.reloadData()
-                }
-            } catch {
-                print("error")
-            }
-        }.resume()
+        let index = genresSegmentControl.selectedSegmentIndex
+        viewModel?.startFetch(urlString: genresPath[index])
+        navigationItem.title = genresArray[index]
     }
 
     func configureCell(cell: ListTableViewCell, for indexPath: IndexPath) {
@@ -124,11 +104,11 @@ final class ListViewController: UIViewController {
 
 // MARK: - UITableViewDelegate
 
-extension ListViewController: UITableViewDelegate {}
+extension MainViewController: UITableViewDelegate {}
 
 // MARK: - UITableViewDataSource
 
-extension ListViewController: UITableViewDataSource {
+extension MainViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView
             .dequeueReusableCell(withIdentifier: identifire, for: indexPath) as? ListTableViewCell

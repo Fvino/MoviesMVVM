@@ -13,11 +13,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
-        let listViewController = ListViewController()
+        let listViewController = MainViewController()
+        listViewController.viewModel = MVVMViewModel()
         navController = UINavigationController(rootViewController: listViewController)
 
         window?.rootViewController = navController
-        window?.backgroundColor = UIColor.white
+        window?.backgroundColor = UIColor.black
         window?.makeKeyAndVisible()
     }
 
