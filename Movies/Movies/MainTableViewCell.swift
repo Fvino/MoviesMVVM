@@ -1,10 +1,10 @@
-// ListTableViewCell.swift
+// MainTableViewCell.swift
 // Copyright © RoadMap. All rights reserved.
 
 import UIKit
 
 /// ListTableViewCell
-final class ListTableViewCell: UITableViewCell {
+final class MainTableViewCell: UITableViewCell {
     // MARK: - Properties
 
     static let identifier = "ListTableViewCell"
@@ -20,7 +20,6 @@ final class ListTableViewCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-
         createVisualElements()
     }
 

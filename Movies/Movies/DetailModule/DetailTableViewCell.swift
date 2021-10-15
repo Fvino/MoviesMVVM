@@ -1,9 +1,9 @@
-// InformationFilmViewCellTableViewCell.swift
+// DetailTableViewCell.swift
 // Copyright © RoadMap. All rights reserved.
 
 import UIKit
 /// InformationFilmViewCellTableViewCell
-final class InformationFilmViewCellTableViewCell: UITableViewCell {
+final class DetailTableViewCell: UITableViewCell {
     // MARK: - Properties
 
     static let identifier = "InfoTableViewCell"

@@ -4,19 +4,9 @@
 import UIKit
 /// LIstViewController
 final class MainViewController: UIViewController {
-    // MARK: - Private Properties
+    // MARK: - Public Properties
 
-    private var movieTableView = UITableView()
-    private var genresSegmentControl = UISegmentedControl()
-    private let identifire = "MyCell"
-    private var genresArray = ["Popular", "Top Rated", "Up Coming"]
-    private var jsonUrlString = Constants.popular
-    private var category: Category?
-    private var genresPath = [Constants.popular, Constants.topRated, Constants.upComing]
-
-    // MARK: - Properties
-
-    var viewModel: MVVMViewModel? {
+    var viewModel: MainViewModelProtocol? {
         didSet {
             viewModel?.updateViewData = { [weak self] featchData in
                 self?.category = featchData?.movies
@@ -26,6 +16,16 @@ final class MainViewController: UIViewController {
             }
         }
     }
+
+    // MARK: - Private Properties
+
+    private var movieTableView = UITableView()
+    private var genresSegmentControl = UISegmentedControl()
+    private let identifire = "MyCell"
+    private var genresArray = ["Popular", "Top Rated", "Up Coming"]
+    private var jsonUrlString = Constants.popular
+    private var category: Category?
+    private var genresPath = [Constants.popular, Constants.topRated, Constants.upComing]
 
     // MARK: - UIViewController
 
@@ -37,13 +37,12 @@ final class MainViewController: UIViewController {
 
         createSegmentControl()
         createTable()
-        viewModel?.startFetch(urlString: Constants.popular)
     }
 
     // MARK: - Private Methods
 
     private func createTable() {
-        movieTableView.register(ListTableViewCell.self, forCellReuseIdentifier: identifire)
+        movieTableView.register(MainTableViewCell.self, forCellReuseIdentifier: identifire)
         movieTableView.separatorStyle = .none
         movieTableView.estimatedRowHeight = 200
         movieTableView.rowHeight = UITableView.automaticDimension
@@ -81,11 +80,11 @@ final class MainViewController: UIViewController {
 
     @objc private func selectGendersSegmentControl() {
         let index = genresSegmentControl.selectedSegmentIndex
-        viewModel?.startFetch(urlString: genresPath[index])
+        viewModel?.loadMoviesList(urlString: genresPath[index])
         navigationItem.title = genresArray[index]
     }
 
-    func configureCell(cell: ListTableViewCell, for indexPath: IndexPath) {
+    private func configureCell(cell: MainTableViewCell, for indexPath: IndexPath) {
         guard let result = category?.results[indexPath.row] else { return }
         let filmImage = result.posterPath
 
@@ -111,7 +110,7 @@ extension MainViewController: UITableViewDelegate {}
 extension MainViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView
-            .dequeueReusableCell(withIdentifier: identifire, for: indexPath) as? ListTableViewCell
+            .dequeueReusableCell(withIdentifier: identifire, for: indexPath) as? MainTableViewCell
         else { return UITableViewCell() }
         configureCell(cell: cell, for: indexPath)
 
@@ -126,10 +125,9 @@ extension MainViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let category = category?.results[indexPath.row] else { return }
 
-        let informationFilmVC = InformationFilmViewController()
-
-        informationFilmVC.idFilm = category.id
-        informationFilmVC.infoCategory = category
-        navigationController?.pushViewController(informationFilmVC, animated: true)
+        let previewVC = DetailsViewController()
+        let detialViewModel = DetailViewModel(movieId: category.id, movieAPIService: MovieAPIService())
+        previewVC.detailViewModel = detialViewModel
+        navigationController?.pushViewController(previewVC, animated: true)
     }
 }

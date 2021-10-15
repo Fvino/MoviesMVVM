@@ -14,7 +14,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         options connectionOptions: UIScene.ConnectionOptions
     ) {
         let listViewController = MainViewController()
-        listViewController.viewModel = MVVMViewModel()
+        listViewController.viewModel = MainViewModel(movieAPIService: MovieAPIService())
         navController = UINavigationController(rootViewController: listViewController)
 
         window?.rootViewController = navController
