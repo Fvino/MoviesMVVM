@@ -3,14 +3,21 @@
 
 import Foundation
 
+// MARK: - Protocol
+
 protocol MainViewModelProtocol: AnyObject {
     var movies: Category? { get set }
+    var imageData: Data? { get set }
     var updateViewData: ((MainViewModelProtocol?) -> ())? { get set }
-
-    func startFetch(urlString: String)
+    var movieAPIService: MovieAPIServiceProtocol? { get set }
+    func loadMoviesList(urlString: String)
 }
 
-final class MVVMViewModel: MainViewModelProtocol {
+final class MainViewModel: MainViewModelProtocol {
+    // MARK: - Public Properties
+
+    var imageData: Data?
+    var movieAPIService: MovieAPIServiceProtocol?
     var movies: Category? {
         didSet {
             updateViewData?(self)
@@ -19,18 +26,24 @@ final class MVVMViewModel: MainViewModelProtocol {
 
     var updateViewData: ((MainViewModelProtocol?) -> ())?
 
-    func startFetch(urlString: String) {
-        guard let url = URL(string: urlString) else { return }
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let self = self else { return }
-            guard let data = data else { return }
-            do {
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                self.movies = try decoder.decode(Category.self, from: data)
-            } catch {
+    // MARK: - Init
+
+    init(movieAPIService: MovieAPIServiceProtocol) {
+        self.movieAPIService = movieAPIService
+        loadMoviesList(urlString: Constants.popular)
+    }
+
+    // MARK: - Public Methods
+
+    func loadMoviesList(urlString: String) {
+        movieAPIService?.fetchMovieList(urlString: urlString, completionHandler: { [weak self] result in
+            switch result {
+            case let .success(category):
+                self?.movies = category
+
+            case let .failure(error):
                 print(error.localizedDescription)
             }
-        }.resume()
+        })
     }
 }

@@ -1,13 +1,24 @@
-// InformationFilmViewController.swift
+// DetailsViewController.swift
 // Copyright © RoadMap. All rights reserved.
 
 import UIKit
 /// InformationFilmViewController
-final class InformationFilmViewController: UIViewController {
-    // MARK: - Properties
+final class DetailsViewController: UIViewController {
+    // MARK: - Public Properties
 
     var idFilm = Int()
     var infoCategory: Films?
+
+    var detailViewModel: DetailViewModelProtocol? {
+        didSet {
+            detailViewModel?.updateDetails = { [weak self] fetchData in
+                self?.infoCategory = fetchData.movieDetails
+                DispatchQueue.main.async {
+                    self?.infoTableView.reloadData()
+                }
+            }
+        }
+    }
 
     // MARK: - Private Properties
 
@@ -29,7 +40,7 @@ final class InformationFilmViewController: UIViewController {
     // MARK: - Private Methods
 
     private func createTable() {
-        infoTableView.register(InformationFilmViewCellTableViewCell.self, forCellReuseIdentifier: identifire)
+        infoTableView.register(DetailTableViewCell.self, forCellReuseIdentifier: identifire)
         infoTableView.separatorStyle = .none
         infoTableView.estimatedRowHeight = 700
         infoTableView.rowHeight = UITableView.automaticDimension
@@ -48,31 +59,7 @@ final class InformationFilmViewController: UIViewController {
         infoTableView.dataSource = self
     }
 
-    private func fetchData() {
-        let jsonUrlString =
-            "https://api.themoviedb.org/3/movie/\(idFilm)?api_key=d21445c991b862f2b5da36887c777ba4&language=ru-RU&page=1"
-        guard let url = URL(string: jsonUrlString) else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-
-            guard let data = data else { return }
-
-            do {
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                self.infoCategory = try decoder.decode(Films.self, from: data)
-
-                weak var weakSelf = self
-                DispatchQueue.main.async {
-                    guard weakSelf == self else { return }
-                    weakSelf?.infoTableView.reloadData()
-                }
-            } catch {
-                print("error")
-            }
-        }.resume()
-    }
-
-    private func configureCell(cell: InformationFilmViewCellTableViewCell, for indexPath: IndexPath) {
+    private func configureCell(cell: DetailTableViewCell, for indexPath: IndexPath) {
         guard let result = infoCategory, let filmImage = infoCategory?.posterPath else { return }
         DispatchQueue.global().async {
             let const = "https://image.tmdb.org/t/p/w500"
@@ -89,14 +76,14 @@ final class InformationFilmViewController: UIViewController {
 
 // MARK: - UITableViewDelegate
 
-extension InformationFilmViewController: UITableViewDelegate {}
+extension DetailsViewController: UITableViewDelegate {}
 
 // MARK: - UITableViewDataSource
 
-extension InformationFilmViewController: UITableViewDataSource {
+extension DetailsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView
-            .dequeueReusableCell(withIdentifier: identifire, for: indexPath) as? InformationFilmViewCellTableViewCell
+            .dequeueReusableCell(withIdentifier: identifire, for: indexPath) as? DetailTableViewCell
         else { return UITableViewCell() }
         configureCell(cell: cell, for: indexPath)
         return cell
